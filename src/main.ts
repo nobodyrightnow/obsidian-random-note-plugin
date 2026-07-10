@@ -82,7 +82,7 @@ export default class RandomNoteFromFolderPlugin extends Plugin {
 }
 
 class inputModal extends Modal {
-	constructor(app: App, onSubmit: (path: string) => void) {
+	constructor(app: App, onSubmit: (path: string) => void | Promise<void>) {
 		super(app);
 		
 		this.setTitle('Designate folder (path is relative to root!)');
@@ -100,9 +100,9 @@ class inputModal extends Modal {
 			text.inputEl.addEventListener("keydown", (event) => {
 				if (event.key === 'Enter') {
 					this.close();
-					onSubmit(path);
+					void onSubmit(path);
 				}
-			})
+			});
 		});
 		
 		// Submit button
@@ -113,7 +113,7 @@ class inputModal extends Modal {
 				.setCta()
 				.onClick(() => {
 					this.close();
-					onSubmit(path);
+					void onSubmit(path);
 				}));
 	}
 }
