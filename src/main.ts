@@ -1,89 +1,44 @@
 import {
-	Editor,
-	MarkdownView,
-	MarkdownFileInfo,
+	App,
 	Modal,
 	Notice,
 	Plugin,
+	TFolder,
+	TFile,
+	Setting
 } from 'obsidian';
 import {
 	DEFAULT_SETTINGS,
 	MyPluginSettings,
-	SampleSettingTab,
 } from './settings';
 
-// Remember to rename these classes and interfaces!
-
-export default class MyPlugin extends Plugin {
+export default class RandomNoteFromFolderPlugin extends Plugin {
 	settings!: MyPluginSettings;
 
 	async onload() {
 		await this.loadSettings();
 
 		// This creates an icon in the left ribbon.
-		this.addRibbonIcon('dice', 'Sample', (_evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
-		});
-
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status bar text');
-
-		// This adds a simple command that can be triggered anywhere
-		this.addCommand({
-			id: 'open-modal-simple',
-			name: 'Open modal (simple)',
-			callback: () => {
-				new SampleModal(this.app).open();
-			},
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'replace-selected',
-			name: 'Replace selected content',
-			editorCallback: (
-				editor: Editor,
-				_ctx: MarkdownView | MarkdownFileInfo,
-			) => {
-				editor.replaceSelection('Sample editor command');
-			},
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-modal-complex',
-			name: 'Open modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView =
-					this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
-
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
+		this.addRibbonIcon('dice', 'Pick random file from folder', () => {
+			// open modal and handle input
+			new inputModal(this.app, (path) => {
+				const folder = this.findFolder(path);
+				
+				// handle case where a folder is not found
+				if (folder === null) {
+					return;
 				}
-				return false;
-			},
+				
+				const chosen_file = this.chooseRandomFileInFolder(folder);
+
+				// handle case where folder is empty
+				if (chosen_file === null) {
+					return;
+				}
+
+				this.openNote(chosen_file);
+			}).open();
 		});
-
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
-
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(activeDocument, 'click', (_evt: MouseEvent) => {
-			new Notice('Click');
-		});
-
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(
-			window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000),
-		);
 	}
 
 	onunload() {}
@@ -99,16 +54,87 @@ export default class MyPlugin extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
-}
 
-class SampleModal extends Modal {
-	onOpen() {
-		const { contentEl } = this;
-		contentEl.setText('Woah!');
+	// METHODS FOR CHOOSING RANDOM MD FILE
+
+	findFolder(path: string): TFolder | null {
+		const folder = this.app.vault.getAbstractFileByPath(path);
+		if (folder instanceof TFolder) {
+			new Notice("Folder found!");
+			return folder;
+		} else {
+			new Notice("Folder could not be found");
+			return null;
+		}
 	}
 
-	onClose() {
-		const { contentEl } = this;
-		contentEl.empty();
+	chooseRandomFileInFolder(folder: TFolder): TFile | null {
+		const notes: TFile[] = [];
+
+		const collectNotes = (currentFolder: TFolder) => {
+			for (const child of currentFolder.children) {
+				if (child instanceof TFile) {
+					notes.push(child);
+				} else if (child instanceof TFolder) {
+					collectNotes(child);
+				}
+			}
+		}
+
+		collectNotes(folder);
+
+		if (notes.length === 0) {
+			new Notice('This folder does not have any notes!');
+			return null;
+		} else {
+			new Notice(`${notes.length} notes found`);
+		}
+		
+		new Notice('Choosing note...');
+		const index = Math.floor(Math.random() * notes.length);
+		return notes[index]!;
+	}
+
+	async openNote(note: TFile): Promise<void> {
+		const leaf = this.app.workspace.getLeaf(true);
+		await leaf.openFile(note);
+		new Notice(`Opened note ${note.basename}`);
+	}
+}
+
+class inputModal extends Modal {
+	constructor(app: App, onSubmit: (path: string) => void) {
+		super(app);
+		
+		this.setTitle('Designate Folder (Path is relative to root!)');
+		let path = '';
+		
+		// Textbox
+		new Setting(this.contentEl)
+			.setName('Path')
+			.addText((text) => {
+				text.inputEl.style.width = "450px";
+				text.onChange((value) => {
+				path = value;
+			});
+
+			text.inputEl.addEventListener("keydown", (event) => {
+				if (event.key === 'Enter') {
+					this.close();
+					onSubmit(path);
+				}
+			})
+		});
+		
+		// Submit button
+		new Setting(this.contentEl)
+		.addButton((btn) =>
+			btn
+				.setIcon('dice')
+				.setCta()
+				.onClick(() => {
+					this.close();
+					onSubmit(path);
+				}));
 	}
 }
