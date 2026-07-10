@@ -21,7 +21,7 @@ export default class RandomNoteFromFolderPlugin extends Plugin {
 		// This creates an icon in the left ribbon.
 		this.addRibbonIcon('dice', 'Pick random file from folder', () => {
 			// open modal and handle input
-			new inputModal(this.app, (path) => {
+			new inputModal(this.app, async (path) => {
 				const folder = this.findFolder(path);
 				
 				// handle case where a folder is not found
@@ -36,7 +36,7 @@ export default class RandomNoteFromFolderPlugin extends Plugin {
 					return;
 				}
 
-				this.openNote(chosen_file);
+				await this.openNote(chosen_file);
 			}).open();
 		});
 	}
@@ -106,14 +106,14 @@ class inputModal extends Modal {
 	constructor(app: App, onSubmit: (path: string) => void) {
 		super(app);
 		
-		this.setTitle('Designate Folder (Path is relative to root!)');
+		this.setTitle('Designate folder (path is relative to root!)');
 		let path = '';
 		
 		// Textbox
 		new Setting(this.contentEl)
 			.setName('Path')
 			.addText((text) => {
-				text.inputEl.style.width = "450px";
+				text.inputEl.addClass("random-note-input");
 				text.onChange((value) => {
 				path = value;
 			});

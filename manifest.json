@@ -2,7 +2,7 @@
 	"id": "random-note-from-folder-plugin",
 	"name": "Random Note from Folder Plugin",
 	"version": "1.0.0",
-	"minAppVersion": "1.0.0",
+	"minAppVersion": "1.1.0",
 	"description": "Select a folder to have a random note chosen from.",
 	"author": "nobodyrightnow",
 	"authorUrl": "https://github.com/nobodyrightnow",
