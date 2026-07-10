@@ -7,17 +7,10 @@ import {
 	TFile,
 	Setting
 } from 'obsidian';
-import {
-	DEFAULT_SETTINGS,
-	MyPluginSettings,
-} from './settings';
 
 export default class RandomNoteFromFolderPlugin extends Plugin {
-	settings!: MyPluginSettings;
 
 	async onload() {
-		await this.loadSettings();
-
 		// This creates an icon in the left ribbon.
 		this.addRibbonIcon('dice', 'Pick random file from folder', () => {
 			// open modal and handle input
@@ -39,20 +32,6 @@ export default class RandomNoteFromFolderPlugin extends Plugin {
 				await this.openNote(chosen_file);
 			}).open();
 		});
-	}
-
-	onunload() {}
-
-	async loadSettings() {
-		this.settings = Object.assign(
-			{},
-			DEFAULT_SETTINGS,
-			(await this.loadData()) as Partial<MyPluginSettings>,
-		);
-	}
-
-	async saveSettings() {
-		await this.saveData(this.settings);
 	}
 
 	// METHODS FOR CHOOSING RANDOM MD FILE
