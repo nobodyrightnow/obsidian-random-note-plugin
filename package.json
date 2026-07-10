@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-sample-plugin",
+	"name": "random-note-from-folder-plugin",
 	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"description": "This is a simple plugin for Obsidian (https://obsidian.md) that chooses a random note from the folder that the user inputs",
 	"main": "main.js",
 	"type": "module",
 	"scripts": {
